@@ -16,6 +16,7 @@
         "yqlp": "*",
         "mongodb": "*",
         "monk": "*",
-        "array.prototype.find": "*"
+        "array.prototype.find": "*",
+        "douban-client": "*"
     }
 }
