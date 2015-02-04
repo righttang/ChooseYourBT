@@ -17,6 +17,7 @@
         "mongodb": "*",
         "monk": "*",
         "array.prototype.find": "*",
-        "douban-client": "*"
+        "douban-client": "*",
+        "q": "*"
     }
 }

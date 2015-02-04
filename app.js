@@ -4,7 +4,9 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var q = require('q');
 require('array.prototype.find');
+
 
 //Database Connection
 var mongo = require('mongodb');
@@ -14,6 +16,7 @@ var db = monk('localhost:27017/ChooseYourBT');
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var btmee = require('./routes/btmee');
+var douban = require('./routes/douban');
 
 var app = express();
 
@@ -38,6 +41,7 @@ app.use(function (req, res, next) {
 app.use('/', routes);
 app.use('/users', users);
 app.use('/btmee', btmee);
+app.use('/douban', douban);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
