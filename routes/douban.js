@@ -14,11 +14,20 @@ var collectionName = 'movie';
 router.get('/', function (req, res, next) {
 
     if (req.query.code) {
-        doubanClient.getDoubanClient(req.query.code);
+        doubanClient.getDoubanClient(req.query.code).then(
+            function() {
+
+            },
+            function() {
+            res.writeHead(301,
+                {Location: '/'}
+            );
+            res.end();
+        });
     }
 
     queryDataFromDouban('采访.The.Interview.2014').then(function (data) {
-        res.json(JSON.parse(data));
+        res.json(data);
     }, function (authorize_url) {
         console.log("Rejectted from second Level");
         res.writeHead(301,
@@ -54,7 +63,6 @@ function queryDataFromDouban(movieName) {
             });
     }
     return deferred.promise;
-
 }
 
 module.exports = router;

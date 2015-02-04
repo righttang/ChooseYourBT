@@ -9,6 +9,7 @@ var monk = require('monk');
 var q = require('q');
 var db = monk('localhost:27017/ChooseYourBT');
 var configCollection = 'config';
+var settings = require('../settings.json');
 
 API_KEY = '08c8a7a3a2be10791a59f6eae83a316b';
 API_SECRET = 'd72371280aaebcff';
@@ -28,21 +29,17 @@ exports.getDoubanClient = function (code) {
     var client = new DoubanClient(API_KEY, API_SECRET, your_redirect_uri, SCOPE);
     if (code) {
         client.auth_with_code(code, function (err, doubanToken) {
-            console.log('this is your ' + doubanToken);
-            storeDoubanToken(doubanToken);
-            deferred.resolve(client);
+            if (doubanToken.access_token) {
+                storeDoubanToken(doubanToken);
+                deferred.resolve(client);
+            } else {
+                deferred.reject(client);
+            }
+
         });
     }
     getDoubanTokenFromDB().then(function (doubanToken) {
         client.loadFromDoubanToken(doubanToken);
-        var event = client.movie.search('采访.The.Interview.2014');
-        event.on('data', function (err, data) {
-            if (!err) {
-                console.log(data);
-            } else {
-                console.log(err);
-            }
-        });
         deferred.resolve(client);
     }, function () {
         process.stdout.write(client.authorize_url() + '\n');

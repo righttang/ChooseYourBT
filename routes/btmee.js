@@ -5,11 +5,12 @@ var express = require('express');
 var YQL = require('yqlp');
 var mongo = require('mongodb');
 var monk = require('monk');
+var settings = require('../settings.json');
 var db = monk('localhost:27017/ChooseYourBT');
 var collectionName = 'movie';
 
 var router = express.Router();
-var useMock = true;
+
 
 router.get('/', function (req, res, next) {
     fetchBTmeeData();
@@ -26,7 +27,7 @@ router.get('/help', function (req, res, next) {
 function fetchBTmeeData() {
     //Retrive results from mock;
     var collection = db.get(collectionName);
-    if (useMock) {
+    if (settings.useMock) {
         var catResults = filterMagTitle(mockdbcollection.getBTmeeMock().results);
         updateDB(catResults, collection);
     } else {
