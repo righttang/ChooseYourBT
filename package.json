@@ -18,6 +18,7 @@
         "monk": "*",
         "array.prototype.find": "*",
         "douban-client": "*",
-        "q": "*"
+        "q": "*",
+        "fuzzyset": "*"
     }
 }
