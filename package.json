@@ -19,6 +19,7 @@
         "array.prototype.find": "*",
         "douban-client": "*",
         "q": "*",
-        "fuzzyset": "*"
+        "fuzzyset.js": "*",
+        "node-schedule": "*"
     }
 }

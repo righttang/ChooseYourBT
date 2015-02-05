@@ -2,6 +2,7 @@ var express = require('express');
 require('fuzzyset.js');
 var router = express.Router();
 var settings = require('../settings.json');
+var schedule = require('node-schedule');
 var doubanClient = require('../douban/doubanClient.js');
 var mockdbcollection = require('../models/mockdbcollection.js')
 
@@ -19,43 +20,54 @@ router.get('/', function (req, res, next) {
         });
 });
 
-router.get('/update', function (req, res, next) {
-    var collection = db.get(collectionName);
-    collection.find({}, {},
-        function (e, doc) {
-            for (var i = 0; i < 5; i++) {
-                (function (index) {
-                    doubanClient.getDoubanClient().then(function (client) {
-                        var searchKeyword = convertNameToSearchTerm(doc[index].name);
+//Cron Job to update every one min
+var j = schedule.scheduleJob('*/1 * * * *', function(){
+    console.log('The answer to life, the universe, and everything!');
+    updateMovies();
+});
 
-                        if (settings.useMock) {
-                            console.log(processSearchResults(mockdbcollection.getDoubanMock().subjects, searchKeyword));
-                        } else {
-                            var searchEvent = client.movie.search(searchKeyword.englishName);
-                            searchEvent.on('data', function (err, data) {
-                                data = JSON.parse(data);
-                                if (!err) {
-                                    if (data.subjects) {
-                                        console.log(processSearchResults(data.subjects, searchKeyword));
-                                    }
-                                }
-                            });
+function updateMovies() {
+    var collection = db.get(collectionName);
+    collection.findOne({rating: {$exists: false}}, {},
+        function (e, doc) {
+            doubanClient.getDoubanClient().then(function (client) {
+                var searchKeyword = convertNameToSearchTerm(doc.name);
+                if (settings.useMock) {
+                    var rating = processSearchResults(mockdbcollection.getDoubanMock().subjects, searchKeyword);
+                    doc.rating = rating;
+                    collection.update({_id: doc._id},
+                        { $set: doc },
+                        { upsert: false }).then(function () {
+                            console.log('Set ' + doc.name + ' to ' + doc.rating);
+                        });
+
+                } else {
+                    var searchEvent = client.movie.search(searchKeyword.englishName);
+                    searchEvent.on('data', function (err, data) {
+                        data = JSON.parse(data);
+                        if (!err) {
+                            if (data.subjects) {
+                                var rating = processSearchResults(data.subjects, searchKeyword);
+                                doc.rating = rating;
+                                collection.update({_id: doc._id},
+                                    { $set: doc },
+                                    { upsert: false }).then(function () {
+                                        console.log('Set ' + doc.name + ' to ' + doc.rating);
+                                    });
+                            }
                         }
                     });
-                }(i));
-            }
+                }
+            });
         });
+};
 
-    res.send("OK");
-
-
-});
 
 function convertNameToSearchTerm(name) {
     var chineseName = name.replace(/[^\u4e00-\u9fa5]/gmi, '').replace(/\s+/g, " ");
     var englishName = name.replace(/[^a-z0-9]/gmi, " ")
         .replace("2014", '').replace("1080p", '').replace("BluRay", '')
-        .replace("WEBRip", '').replace("2013", '')
+        .replace("WEBRip", '').replace("2013", '').replace("720p", '').replace("WEB", '')
         .replace("WEB DL", '').replace("DL", '').replace(/\s+/g, " ");
     return {"chineseName": chineseName,
         "englishName": englishName}
@@ -68,23 +80,27 @@ function processSearchResults(subjects, searchKeyword) {
     for (var i = 0; i < subjects.length; i++) {
         nameFuzzySet.add(subjects[i].original_title);
     }
-    console.log(searchKeyword.englishName);
+
     var mostMatchName = null;
     if ((nameFuzzySet.get(searchKeyword.englishName))) {
         mostMatchName = (nameFuzzySet.get(searchKeyword.englishName))[0][1];
     } else {
-        return subjects[0].rating.average;//Return First one
-    }
+        if (subjects[0].rating){
+            return subjects[0].rating.average;//Return First one
+        } else {
+            return '0';
+        }
 
+    }
 
     var mostMatchSubject = subjects.find(function (subject) {
         return subject.original_title == mostMatchName;
     });
-    console.log(mostMatchName);
+
     if (mostMatchSubject.rating.average) {
         return mostMatchSubject.rating.average;
     } else {//No Rating
-        return null;
+        return '0';
     }
 }
 

@@ -31,10 +31,11 @@ function fetchBTmeeData() {
         var catResults = filterMagTitle(mockdbcollection.getBTmeeMock().results);
         updateDB(catResults, collection);
     } else {
-        YQL.execp("SELECT * FROM data.html.cssselect WHERE url='http://btmee.net/1080p' AND css='tr'")
+        YQL.execp("select * from html where url='http://btmee.net/movie' AND compat='html5' AND xpath='//tr'")
             .then(function (response) {
                 var results = response.query.results;
-                var catResults = filterMagTitle(results.results);
+                console.log(JSON.stringify(results));
+                var catResults = filterMagTitle(results);
                 updateDB(catResults, collection);
             }, function (error) {
                 console.log('Ut oh! Example #3 has messed up:', error);
@@ -82,7 +83,7 @@ function updateDB(catResults, collection) {
             return el.class == 'dow';
         });
         doc.magDown = downElement.a[1].href;
-        doc.ed2kNone = downElement.a[2].href;
+        doc.ed2k = downElement.a[2].ed2k;
         console.log(JSON.stringify(doc));
         collection.update(
             {name: doc.name}, //Name equal
